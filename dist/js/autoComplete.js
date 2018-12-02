@@ -100,17 +100,37 @@
 
   var autoComplete =
   function () {
+    _createClass(autoComplete, [{
+      key: "isDataSrcValid",
+      value: function isDataSrcValid(dataSrc) {
+        if (Array.isArray(dataSrc)) {
+          return true;
+        } else if (dataSrc instanceof Promise) {
+          return true;
+        } else if (typeof dataSrc === 'function') {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }, {
+      key: "getDataSrc",
+      value: function getDataSrc() {
+        var _this = this;
+        return new Promise(function (resolve) {
+          if (Array.isArray(_this.dataSrc)) {
+            resolve(_this.dataSrc);
+          } else if (_this.dataSrc instanceof Promise) {
+            _this.dataSrc.then(function (result) {
+              resolve(result);
+            });
+          }
+        });
+      }
+    }]);
     function autoComplete(config) {
       _classCallCheck(this, autoComplete);
-      this.dataSrc = function () {
-        if (Array.isArray(config.dataSrc)) {
-          return config.dataSrc;
-        } else if (Array.isArray(config.dataSrc())) {
-          return config.dataSrc();
-        } else {
-          renderResults.error("<strong>Error</strong>, <strong>data source</strong> value is not an <strong>Array</string>.");
-        }
-      };
+      this.dataSrc = config.dataSrc;
       this.placeHolder = String(config.placeHolder) ? config.placeHolder : false;
       this.placeHolderLength = Number(config.placeHolderLength) ? config.placeHolderLength : Infinity;
       this.maxResults = Number(config.maxResults) ? config.maxResults : 10;
@@ -151,32 +171,37 @@
     }, {
       key: "listMatchedResults",
       value: function listMatchedResults() {
-        var _this = this;
-        this.resList = [];
-        this.cleanResList = [];
-        var inputValue = renderResults.getSearchInput().value;
-        try {
-          this.dataSrc().filter(function (record) {
-            var match = _this.search(inputValue, record);
-            if (match) {
-              _this.resList.push(match);
-              _this.cleanResList.push(record);
-            }
-          });
-        } catch (error) {
-          renderResults.error(error);
-        }
-        renderResults.addResultsToList(this.resList.slice(0, this.maxResults), this.cleanResList.slice(0, this.maxResults), this.dataAttribute);
+        var _this2 = this;
+        return new Promise(function (res) {
+          _this2.resList = [];
+          _this2.cleanResList = [];
+          var inputValue = renderResults.getSearchInput().value;
+          try {
+            _this2.getDataSrc().then(function (dataSrc) {
+              dataSrc.filter(function (record) {
+                var match = _this2.search(inputValue, record);
+                if (match) {
+                  _this2.resList.push(match);
+                  _this2.cleanResList.push(record);
+                }
+              });
+              res(renderResults.addResultsToList(_this2.resList.slice(0, _this2.maxResults), _this2.cleanResList.slice(0, _this2.maxResults), _this2.dataAttribute));
+            });
+          } catch (error) {
+            renderResults.error(error);
+          }
+        });
       }
     }, {
       key: "searchInputValidation",
       value: function searchInputValidation(selector) {
-        var _this2 = this;
+        var _this3 = this;
         selector.addEventListener("keyup", function () {
           if (selector.value.length > 0 && selector.value !== " ") {
             renderResults.clearResults();
-            _this2.listMatchedResults();
-            renderResults.getSelection(_this2.onSelection, _this2.placeHolderLength);
+            _this3.listMatchedResults().then(function () {
+              renderResults.getSelection(_this3.onSelection, _this3.placeHolderLength);
+            });
           } else {
             renderResults.clearResults();
           }
@@ -193,11 +218,12 @@
       key: "init",
       value: function init() {
         try {
-          if (this.dataSrc()) {
+          if (this.isDataSrcValid(this.dataSrc)) {
             this.setPlaceHolder();
             this.searchInputValidation(renderResults.getSearchInput());
           }
         } catch (error) {
+          console.log(error);
           renderResults.error("<strong>error</strong>, autoComplete <strong>engine</strong> is not <strong>starting</strong>...");
         }
       }

@@ -1,17 +1,45 @@
 import { renderResults as autoCompleteView } from "../views/autoCompleteView";
 
 export default class autoComplete {
+
+	isDataSrcValid(dataSrc) {
+    if (Array.isArray(dataSrc)) {
+      return true;
+    } else if (dataSrc instanceof Promise) {
+    	return true;
+    } else if (typeof dataSrc === 'function') {
+    	return true;
+		} else {
+    	return false;
+		}
+
+    // else if (Array.isArray(config.dataSrc())) {
+    //   return config.dataSrc();
+    // } else if (config.dataSrc instanceof Promise) {
+    //   const res = await config.dataSrc();
+    //   return res;
+    // } else {
+    //   autoCompleteView.error("<strong>Error</strong>, <strong>data source</strong> value is not an <strong>Array</string>.");
+    // }
+	}
+
+	getDataSrc() {
+		return new Promise((resolve) => {
+      if (Array.isArray(this.dataSrc)) {
+        resolve(this.dataSrc);
+      } else if (this.dataSrc instanceof Promise) {
+      	this.dataSrc.then((result) => {
+      		// todo check is valid data
+					resolve(result);
+				});
+			}
+		});
+	}
+
 	constructor(config) {
 		// Source of data list
-		this.dataSrc = () => {
-			if (Array.isArray(config.dataSrc)) {
-				return config.dataSrc;
-			} else if (Array.isArray(config.dataSrc())) {
-				return config.dataSrc();
-			} else {
-				autoCompleteView.error("<strong>Error</strong>, <strong>data source</strong> value is not an <strong>Array</string>.");
-			}
-		};
+		this.dataSrc = config.dataSrc;
+
 		// Placeholder text
 		this.placeHolder = String(config.placeHolder) ? config.placeHolder : false;
 		// Maximum Placeholder text length
@@ -79,34 +107,40 @@ export default class autoComplete {
 
 	// List all matching results
 	listMatchedResults() {
-		// Final highlighted results list of array
-		this.resList = [];
+		return new Promise((res) => {
+      // Final highlighted results list of array
+      this.resList = [];
 
-		// Final clean results list of array
-		this.cleanResList = [];
+      // Final clean results list of array
+      this.cleanResList = [];
 
-		// Holds the input search value
-		let inputValue = autoCompleteView.getSearchInput().value;
+      // Holds the input search value
+      let inputValue = autoCompleteView.getSearchInput().value;
 
-		try {
-			// Checks input matches in data source
-			this.dataSrc().filter(record => {
-				const match = this.search(inputValue, record);
-				if (match) {
-					this.resList.push(match);
-					this.cleanResList.push(record);
+      try {
+        // Checks input matches in data source
 
-				}
-			});
-		} catch (error) {
-			autoCompleteView.error(error);
-		}
-		// Rendering matching results to the UI list
-		autoCompleteView.addResultsToList(
-			this.resList.slice(0, this.maxResults),
-			this.cleanResList.slice(0, this.maxResults),
-			this.dataAttribute
-		);
+        this.getDataSrc().then((dataSrc) => {
+          dataSrc.filter(record => {
+            const match = this.search(inputValue, record);
+            if (match) {
+              this.resList.push(match);
+              this.cleanResList.push(record);
+
+            }
+          });
+
+          // Rendering matching results to the UI list
+          res(autoCompleteView.addResultsToList(
+            this.resList.slice(0, this.maxResults),
+            this.cleanResList.slice(0, this.maxResults),
+            this.dataAttribute
+          ));
+				});
+      } catch (error) {
+        autoCompleteView.error(error);
+      }
+		});
 	}
 
 	// Checks user's input search value validity
@@ -119,9 +153,10 @@ export default class autoComplete {
 				// clear results list
 				autoCompleteView.clearResults();
 				// List matching results
-				this.listMatchedResults();
-				// Gets user's selection
-				autoCompleteView.getSelection(this.onSelection, this.placeHolderLength);
+				this.listMatchedResults().then(() => {
+          // Gets user's selection
+          autoCompleteView.getSelection(this.onSelection, this.placeHolderLength);
+				});
 			} else {
 				// clears all results list
 				autoCompleteView.clearResults();
@@ -140,11 +175,13 @@ export default class autoComplete {
 	init() {
 		try {
 			// If the data source is valid run the app else error
-			if (this.dataSrc()) {
+			if (this.isDataSrcValid(this.dataSrc)) {
 				this.setPlaceHolder();
 				this.searchInputValidation(autoCompleteView.getSearchInput());
 			}
 		} catch (error) {
+			console.log(error);
+
 			autoCompleteView.error(
 				"<strong>error</strong>, autoComplete <strong>engine</strong> is not <strong>starting</strong>..."
 			);

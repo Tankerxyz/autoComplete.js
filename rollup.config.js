@@ -17,13 +17,16 @@ export default [
 			babel({
 				exclude: "node_modules/**",
 				presets: ["@babel/preset-env"],
+        runtimeHelpers: true,
+        // externalHelpers: true,
+				// plugins: ["@babel/plugin-transform-runtime"]
 			}),
-			uglify({
-				compress: {
-					toplevel: true,
-					drop_console: true
-				}
-			}),
+			// uglify({
+			// 	compress: {
+			// 		toplevel: true,
+			// 		drop_console: true
+			// 	}
+			// }),
 		]
 	},
 	{
