@@ -1,5 +1,9 @@
 import { renderResults as autoCompleteView } from "../views/autoCompleteView";
 
+async function aoeu() {
+
+}
+
 export default class autoComplete {
 
 	isDataSrcValid(dataSrc) {
@@ -12,28 +16,14 @@ export default class autoComplete {
 		} else {
     	return false;
 		}
-
-    // else if (Array.isArray(config.dataSrc())) {
-    //   return config.dataSrc();
-    // } else if (config.dataSrc instanceof Promise) {
-    //   const res = await config.dataSrc();
-    //   return res;
-    // } else {
-    //   autoCompleteView.error("<strong>Error</strong>, <strong>data source</strong> value is not an <strong>Array</string>.");
-    // }
 	}
 
-	getDataSrc() {
-		return new Promise((resolve) => {
-      if (Array.isArray(this.dataSrc)) {
-        resolve(this.dataSrc);
-      } else if (this.dataSrc instanceof Promise) {
-      	this.dataSrc.then((result) => {
-      		// todo check is valid data
-					resolve(result);
-				});
-			}
-		});
+	async getDataSrc(input) {
+    if (Array.isArray(this.dataSrc)) {
+      return this.dataSrc;
+    } else if (typeof this.dataSrc === 'function') {
+    	return await this.dataSrc(input);
+    }
 	}
 
 	constructor(config) {
@@ -146,7 +136,7 @@ export default class autoComplete {
 	// Checks user's input search value validity
 	searchInputValidation(selector) {
 		// Input field handler fires an event onKeyup action
-		selector.addEventListener("keyup", () => {
+		selector.addEventListener("keyup", async () => {
 			// event.preventDefault();
 			// Check if input is not empty or just have space before triggering the app
 			if (selector.value.length > 0 && selector.value !== " ") {

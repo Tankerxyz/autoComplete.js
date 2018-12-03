@@ -3,6 +3,7 @@ import { eslint } from "rollup-plugin-eslint";
 import cleanup from "rollup-plugin-cleanup";
 import { uglify } from "rollup-plugin-uglify";
 import pkg from "./package.json";
+import babelrc from 'babelrc-rollup';
 
 export default [
 	{
@@ -13,15 +14,17 @@ export default [
 			format: "umd"
 		},
 		plugins: [
-			eslint(),
-			babel({
+      eslint(),
+      babel(babelrc({
+        addExternalHelpersPlugin: false,
+        runtimeHelpers: false,
 				exclude: "node_modules/**",
 				presets: ["@babel/preset-env"],
-        runtimeHelpers: true,
+        // runtimeHelpers: true,
         // externalHelpers: true,
 				// plugins: ["@babel/plugin-transform-runtime"]
-			}),
-			// uglify({
+			}))
+      // uglify({
 			// 	compress: {
 			// 		toplevel: true,
 			// 		drop_console: true
@@ -37,7 +40,7 @@ export default [
 			format: "umd"
 		},
 		plugins: [
-			babel({
+      babelrc({
 				exclude: "node_modules/**",
 				presets: ["@babel/preset-env"],
 			}),

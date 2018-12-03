@@ -1003,7 +1003,13 @@ const grocery = [
 
 // The app instance creator
 new autoComplete({
-  dataSrc: new Promise((res) => { setTimeout(() => res(grocery), 5000) }),
+  dataSrc: (input) => {
+
+
+    return new Promise((res) => {
+      setTimeout(() => res(grocery.filter((el) => el.includes(input))), 1000)
+    })
+	},
 	// dataSrc: grocery,
 	placeHolder: "Try me...",
 	placeHolderLength: 26,
